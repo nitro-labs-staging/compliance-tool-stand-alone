@@ -43,8 +43,9 @@
         response: null,
         loading: false,
         error: null,
-        question: "",
+        question: "Can we describe our product as 'best in class' or 'most effective'?",
         showAnswer: false,
+        questionInitialValue: "Can we describe our product as 'best in class' or 'most effective'?",
         hoveredStar: 0,
         rating: 0,
         username: "admin",
@@ -144,6 +145,7 @@
           this.question = "";
           this.error = null;
           this.rating = 0;
+          this.question = this.questionInitialValue
           this.stopMessageRotation();
         },
 
@@ -222,6 +224,18 @@
           )}`;
 
           window.open(linkedInUrl, "_blank", "width=600,height=600");
+        },
+
+        onBlur(){
+          if(this.question == ''){
+            this.question = this.questionInitialValue
+          }
+        },
+
+        onFocus(){
+          if(this.questionInitialValue == this.question){
+            this.question = '';
+          }
         },
       }));
     });
@@ -325,13 +339,13 @@
 
       <div class="mt-8 space-y-4">
         <div class="relative">
-          <textarea x-model="question" x-data="{ focused: false }" @focus="focused = true" @blur="focused = false"
-            :class="{
-              'animate-pulse': !focused && !question
-            }"
+          <textarea x-model="question" @focus="onFocus" @blur="onBlur"
+           
             class="w-full bg-white/10 text-white text-xl font-normal placeholder-white/80 p-4 rounded-md resize-none no-scrollbar focus:outline-none focus:ring-2 focus:ring-white/50 border border-white"
-            rows="3" placeholder="Can we describe our product as 'best in class' or 'most effective'?"
-            @keydown.enter.prevent="submitQuestion" @keydown="error = null" :disabled="loading"></textarea>
+            rows="3" placeholder="Enter your question here"
+            @keydown.enter.prevent="submitQuestion" @keydown="error = null" :disabled="loading"
+            
+            ></textarea>
         </div>
         <!-- Error Message Display -->
         <div x-show="error" class="text-white text-sm font-medium mb-2" x-text="error"></div>
@@ -417,7 +431,7 @@
           </svg>
         </template>
       </div>
-<!--      <div class="flex justify-center">
+     <!-- <div class="flex justify-center">
       <small class="text-purple-900/80 italic">Rate this answer</small>
      </div>
      <br> -->

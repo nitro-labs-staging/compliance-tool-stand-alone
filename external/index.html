@@ -15,10 +15,11 @@
   <script src="../js/tailwind-config.js"></script>
   <script src="../js/main.js"></script>
   <link rel="stylesheet" href="../css/styles.css">
+
 </head>
 
 <body class="bg-white min-h-screen flex items-center justify-center p-4 font-sans">
-  <div x-data="compliance" class="max-w-md w-full">
+  <div x-data="compliance" x-cloak class="max-w-md w-full">
     <!-- Question State -->
     <div x-show="!showAnswer"
       class="bg-nitro-blue rounded-lg px-6 pt-3 pb-6 space-y-4 border-4 animate-borderPulse animate-backgroundFade transition-border duration-300">

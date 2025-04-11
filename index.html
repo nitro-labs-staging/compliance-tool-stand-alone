@@ -23,7 +23,8 @@
           },
           animation: {
             spin: "spin 1s linear infinite",
-          
+            borderPulse: "borderPulse 2s linear infinite 0.1s",
+            backgroundFade: "backgroundFade 3s ease-in-out infinite 0.1s",
           },
           fontFamily: {
             sans: ["Poppins", "system-ui", "sans-serif"],
@@ -32,7 +33,6 @@
             wider: ".1em",
           },
           keyframes: {
-           
           },
         },
       },
@@ -255,6 +255,37 @@
       }
     }
 
+    @keyframes borderPulse {
+      0% {
+        border-color: rgba(0, 102, 255, 0.8);
+       
+      }
+      50% {
+        border-color: rgba(92, 225, 211, 1);
+       
+      }
+      100% {
+        border-color: rgba(0, 102, 255, 0.8);
+
+      }
+    }
+
+    @keyframes backgroundFade {
+      0% {
+        background-color: #0066FF;
+      }
+      50% {
+        background-color: #0055d4;
+      }
+      100% {
+        background-color: #0066FF;
+      }
+    }
+
+    .border-transition {
+      transition: border-width 0.3s ease-in-out, border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
     /* Hide scrollbar for Chrome, Safari and Opera */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
@@ -285,7 +316,7 @@
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #0066ff;
+      background: #4C1D95;
     }
 
     .shine-text {
@@ -314,9 +345,10 @@
 </head>
 
 <body class="bg-white min-h-screen flex items-center justify-center p-4 font-sans">
-  <div x-data="compliance" class="max-w-md w-full shadow-lg ">
+  <div x-data="compliance" class="max-w-md w-full">
     <!-- Question State -->
-    <div x-show="!showAnswer" class="bg-nitro-blue rounded-lg shadow-lg px-6 pt-3 pb-6 space-y-4">
+    <div x-show="!showAnswer" class="bg-nitro-blue rounded-lg px-6 pt-3 pb-6 space-y-4 border-transition border-4 animate-borderPulse animate-backgroundFade"
+        >
       <!-- Header -->
       <div class="space-y-1">
         <h2 class="text-white text-2xl font-bold tracking-wider underline mt-2 pb-3">
@@ -328,11 +360,11 @@
         Ask AvaRx direct compliance questions.
       </span>
       <br>
-      <span class="text-white/80 font-bold italic">
+      <span class="text-white/80  italic">
        They will reply with: </span>
       </span>
       <br>
-      <span class=" text-white/80  font-bold italic">
+      <span class=" text-white/80  italic">
         The Code;  Case examples; and, Clear advice.
        </span>
 
@@ -344,14 +376,21 @@
             class="w-full bg-white/10 text-white text-xl font-normal placeholder-white/80 p-4 rounded-md resize-none no-scrollbar focus:outline-none focus:ring-2 focus:ring-white/50 border border-white"
             rows="3" placeholder="Enter your question here"
             @keydown.enter.prevent="submitQuestion" @keydown="error = null" :disabled="loading"
+            :class="{
+              'animate-pulse': question == questionInitialValue,
             
+            }"
             ></textarea>
         </div>
         <!-- Error Message Display -->
         <div x-show="error" class="text-white text-sm font-medium mb-2" x-text="error"></div>
         <button @click="submitQuestion"
           class="w-full bg-nitro-teal font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors relative"
-          :disabled="loading" :class="currentMessageIndex % 2 === 1 ? '!text-dark ' : 'text-gray-700 !bg-white'">
+          :disabled="loading" 
+          :class="[
+            currentMessageIndex % 2 === 1 ? '!text-dark ' : 'text-gray-700 !bg-white',
+         
+          ]">
           <span x-show="!loading">Ask Question</span>
           <span x-show="loading" class="flex items-center justify-center space-x-2">
             <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -384,7 +423,7 @@
       </div>
 
       <!-- Loading State -->
-      <div x-show="loading" class="text-white text-center py-4">
+      <div x-show="loading" class="text-white text-center py-4 rounded-md">
         Loading...
       </div>
 
@@ -439,8 +478,9 @@
         class="w-full my-5 bg-white text-purple-900 font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors relative ">
         <span class="inline-block">Share</span>
       </button> -->
+      <br>
       <button @click="reset"
-        class="w-full mt-5 bg-white text-purple-900 font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors relative ">
+        class="w-full  bg-white text-purple-900 font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors relative ">
         <span class="inline-block shine-text">Ask Another Question</span>
       </button>
       <!-- Disclaimer -->

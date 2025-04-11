@@ -12,317 +12,9 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            "nitro-teal": "#5CE1D3",
-            "nitro-blue": "#0066FF",
-            "nitro-dark-blue": "#0055d4",
-          },
-          animation: {
-            borderPulse: "borderPulse 2s linear infinite 0.1s",
-            backgroundFade: "backgroundFade 3s ease-in-out infinite 0.1s",
-            shine: "shine 4s linear infinite"
-          },
-          fontFamily: {
-            sans: ["Poppins", "system-ui", "sans-serif"],
-          },
-          letterSpacing: {
-            wider: ".1em",
-          },
-          keyframes: {
-            borderPulse: {
-              "0%, 100%": { borderColor: "rgba(0, 102, 255, 0.8)" },
-              "50%": { borderColor: "rgba(92, 225, 211, 1)" },
-            },
-            backgroundFade: {
-              "0%, 100%": { backgroundColor: "#0066FF" },
-              "50%": { backgroundColor: "#0055d4" },
-            },
-            shine: {
-              "0%": { backgroundPosition: "-200% center" },
-              "100%": { backgroundPosition: "200% center" },
-            },
-            fadeInPop: {
-              "0%": {
-                opacity: "0",
-                transform: "scale(0.8)"
-              },
-              "70%": {
-                opacity: "1",
-                transform: "scale(1.05)"
-              },
-              "100%": {
-                opacity: "1",
-                transform: "scale(1)"
-              },
-            },
-          },
-          transitionProperty: {
-            'border': 'border-width, border-color',
-          },
-          backgroundImage: {
-            'shine-gradient': 'linear-gradient(to right, #4C1D95 0%, white 10%, #4C1D95 20%)',
-          },
-        },
-      },
-    };
-
-    tailwind.config.plugins = [
-      function ({ addComponents }) {
-        addComponents({
-          '.shine-text': {
-            backgroundImage: 'linear-gradient(to right, #4C1D95 0%, white 10%, #4C1D95 20%)',
-            backgroundSize: '200% auto',
-            color: 'white',
-            backgroundClip: 'text',
-            '-webkit-background-clip': 'text',
-            '-webkit-text-fill-color': 'transparent',
-            animation: 'shine 4s linear infinite'
-          }
-        })
-      }
-    ];
-
-    document.addEventListener("alpine:init", () => {
-      Alpine.data("compliance", () => ({
-        response: null,
-        loading: false,
-        error: null,
-        question: "Can we describe our product as 'best in class' or 'most effective'?",
-        showAnswer: false,
-        questionInitialValue: "Can we describe our product as 'best in class' or 'most effective'?",
-        hoveredStar: 0,
-        rating: 0,
-        username: "admin",
-        password: "nitroV4nZ@9rPqL!2wX8sB",
-        baseUrl: "https://n8n.nitro-test.co.uk/webhook/",
-        loadingMessages: [
-          "Processing...",
-          "Analyzing your question...",
-          "Checking similar cases...",
-          "Analyzing compliance...",
-        ],
-        currentMessageIndex: 0,
-        messageInterval: null,
-        showPreparingMessage: false,
-
-        credentials() {
-          return btoa(`${this.username}:${this.password}`);
-        },
-
-        currentLoadingMessage() {
-          return this.showPreparingMessage ? "Preparing your answer..." : this.loadingMessages[this.currentMessageIndex];
-        },
-
-        isDefaultQuestion() {
-          return this.question === this.questionInitialValue;
-        },
-
-        generateSessionId() {
-          return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        },
-
-        startMessageRotation() {
-          this.currentMessageIndex = 0;
-          this.showPreparingMessage = false;
-          this.messageInterval = setInterval(() => {
-            if (!this.showPreparingMessage) {
-              this.currentMessageIndex = (this.currentMessageIndex + 1) % this.loadingMessages.length;
-            }
-          }, 1000);
-        },
-
-        stopMessageRotation() {
-          if (this.messageInterval) {
-            clearInterval(this.messageInterval);
-            this.messageInterval = null;
-          }
-        },
-
-        async submitQuestion() {
-          if (!this.question.trim()) return;
-          this.loading = true;
-          this.error = null;
-          this.startMessageRotation();
-
-          try {
-            // Get the fingerprint
-            const fp = await FingerprintJS.load();
-            const result = await fp.get();
-
-            const response = await fetch(`${this.baseUrl}compliance-nitro`, {
-              method: "POST",
-              headers: {
-                Authorization: `Basic ${this.credentials()}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                question: this.question,
-                sessionId: this.generateSessionId(),
-                device_fingerprint: result.visitorId,
-              }),
-            });
-
-            if (!response.ok) {
-              const errorMsg = "Could not process your question. Please try rephrasing it to be more specific about ABPI Code compliance.";
-              this.error = errorMsg;
-              throw new Error(errorMsg);
-            }
-
-            this.response = await response.json();
-            this.showPreparingMessage = true;
-
-            setTimeout(() => {
-              this.showAnswer = true;
-              this.loading = false;
-              this.stopMessageRotation();
-            }, 2000);
-          } catch (err) {
-            this.error = err.message || "Failed to fetch data";
-            this.loading = false;
-            this.stopMessageRotation();
-          }
-        },
-
-        reset() {
-          this.response = null;
-          this.showAnswer = false;
-          this.error = null;
-          this.rating = 0;
-          this.question = this.questionInitialValue;
-          this.stopMessageRotation();
-        },
-
-        async submitRating(stars) {
-          if (this.rating) return; // Prevent multiple ratings
-          this.rating = stars;
-
-          try {
-            const ratingResponse = await fetch(
-              `${this.baseUrl}rate-compliance-nitro`,
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Basic ${this.credentials()}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  id: this.response.answer.id,
-                  ratings: stars,
-                }),
-              }
-            );
-
-            if (!ratingResponse.ok) {
-              throw new Error("Failed to submit rating");
-            }
-
-            // Show success message
-            const result = await Swal.fire({
-              title: "Thank you for your feedback!",
-              text: `You rated this answer ${stars} stars`,
-              icon: "success",
-              confirmButtonText: "OK",
-              confirmButtonColor: "#5CE1D3",
-              customClass: {
-                popup: "font-sans",
-                title: "font-bold",
-                confirmButton: "font-bold",
-              },
-              iconColor: '#5CE1D3'
-            });
-          } catch (error) {
-            // Show error message but keep the rating in UI
-            Swal.fire({
-              title: "Rating not saved",
-              text: "There was an error saving your rating. Please try again later.",
-              icon: "error",
-              confirmButtonText: "OK",
-              confirmButtonColor: "#5CE1D3",
-              customClass: {
-                popup: "font-sans",
-                title: "font-bold",
-                confirmButton: "font-bold",
-              },
-              iconColor: '#5CE1D3'
-            });
-          }
-        },
-
-        onBlur() {
-          if (this.question == '') {
-            this.question = this.questionInitialValue;
-          }
-        },
-
-        onFocus() {
-          if (this.isDefaultQuestion()) {
-            this.question = '';
-          }
-        },
-      }));
-    });
-  </script>
-  <style>
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-
-    /* Hide scrollbar for IE, Edge and Firefox */
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      /* IE and Edge */
-      scrollbar-width: none;
-      /* Firefox */
-    }
-
-    /* Custom Scrollbar Styling */
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #ffffff;
-      border-radius: 4px;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #4C1D95;
-    }
-
-    .shine-text {
-      background: linear-gradient(to right,
-          #4C1D95 0%,
-          white 10%,
-          #4C1D95 20%);
-      background-size: 200% auto;
-      color: #fff;
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shine 4s linear infinite;
-    }
-
-    @keyframes shine {
-      0% {
-        background-position: -200% center;
-      }
-
-      100% {
-        background-position: 200% center;
-      }
-    }
-  </style>
+  <script src="/js/tailwind-config.js"></script>
+  <script src="/js/main.js"></script>
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
 
 <body class="bg-white min-h-screen flex items-center justify-center p-4 font-sans">
@@ -330,6 +22,7 @@
     <!-- Question State -->
     <div x-show="!showAnswer"
       class="bg-nitro-blue rounded-lg px-6 pt-3 pb-6 space-y-4 border-4 animate-borderPulse animate-backgroundFade transition-border duration-300">
+      
       <!-- Header -->
       <div class="space-y-1">
         <h2 class="text-white text-2xl font-bold tracking-wider underline mt-2 pb-3">
@@ -337,31 +30,29 @@
         </h2>
       </div>
 
-      <span class="text-white/90  font-bold">
+      <span class="text-white/90 font-bold">
         Ask AvaRx direct compliance questions.
       </span>
       <br>
-      <span class="text-white/80  italic">
-        They will reply with: </span>
+      <span class="text-white/80 italic">
+        They will reply with:
       </span>
       <br>
-      <span class=" text-white/80  italic">
+      <span class="text-white/80 italic">
         The Code; Case examples; and, Clear advice.
       </span>
-
 
       <div class="mt-8 space-y-4">
         <div class="relative">
           <textarea x-model="question" @focus="onFocus" @blur="onBlur"
             class="w-full bg-white/10 text-white text-xl font-normal placeholder-white/80 p-4 rounded-md resize-none no-scrollbar focus:outline-none focus:ring-2 focus:ring-white/50 border border-white"
             rows="3" placeholder="Enter your question here" @keydown.enter.prevent="submitQuestion"
-            @keydown="error = null" :disabled="loading" :class="{
-              'animate-pulse': isDefaultQuestion(),
-            
-            }"></textarea>
+            @keydown="error = null" :disabled="loading" :class="{'animate-pulse': isDefaultQuestion()}"></textarea>
         </div>
+        
         <!-- Error Message Display -->
         <div x-show="error" class="text-white text-sm font-medium mb-2" x-text="error"></div>
+        
         <button @click="submitQuestion"
           class="w-full bg-nitro-teal font-bold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors relative"
           :disabled="loading" :class="currentMessageIndex % 2 === 1 ? '!text-dark ' : 'text-gray-700 !bg-white'">
@@ -382,11 +73,9 @@
     <!-- Answer State -->
     <div x-show="showAnswer" class="bg-nitro-teal rounded-lg px-6 pt-3 pb-6 space-y-2">
       <!-- Header with back button -->
-      <div class="flex justify-between items-start pt-3">
+      <div class="flex justify-between items-start pt-5">
         <div class="space-y-1 text-2xl text-white font-bold tracking-wider underline">
-          <h1></h1>
-          <h2 class="mt-5 pb-5">AvaRx</h2>
-          <h3></h3>
+          <h2 class="pb-5">AvaRx</h2>
         </div>
         <button @click="reset"
           class="p-2 rounded-full bg-white text-purple-900 shadow-md hover:bg-purple-900 hover:text-white transition duration-300">
@@ -433,6 +122,7 @@
         </div>
       </template>
 
+      <!-- Star Rating -->
       <div class="mt-5 pt-4 flex justify-center">
         <template x-for="i in 5">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-colors mx-2" :class="[
@@ -450,6 +140,7 @@
         class="w-full bg-white text-purple-900 font-bold py-3 px-6 rounded-md hover:bg-opacity-90 hover:shadow-2xl hover:shadow-white/50 transition-colors relative">
         <span class="inline-block shine-text">Ask Another Question</span>
       </button>
+      
       <!-- Disclaimer -->
       <p class="text-purple-900 text-sm mt-6 font-normal text-center italic">
         This tool offers general guidance only and is not a substitute for
